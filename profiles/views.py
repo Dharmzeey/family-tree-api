@@ -86,7 +86,7 @@ get_relations = GetRelations.as_view()
 class SearchRelatives(APIView):
     permission_classes = [IsAuthenticated]
     pagination_class = PageNumberPagination
-    pagination_class.page_size = 3
+    pagination_class.page_size = 30
     pagination_class.page_size_query_param = "size"
     pagination_class.max_page_size = 100
     pagination_class.page_query_param = "page"
@@ -161,7 +161,7 @@ class CreateRelationsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Check if the relationship with user already exists
+        # Check if the relationship with user already exists by looking up if the user and a relative already exist
         existing_relation = Relative.objects.filter(
             user=user_profile, relative=relative_profile
         ).exists()
@@ -184,7 +184,9 @@ class CreateRelationsView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        serializer = RelativeSerializer(relative)
+        serializer = RelativeSerializer(relative, context={'request': request})
+        print(relative)
+        print(serializer)
         return Response(
             {"data": serializer.data, "message": "Relationship created successfully."},
             status=status.HTTP_201_CREATED,
