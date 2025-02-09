@@ -145,6 +145,18 @@ class CreateRelationsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+
+        # Check the total number of relatives and offline relatives
+        total_relatives = Relative.objects.filter(user=user_profile).count()
+        total_offline_relatives = OfflineRelative.objects.filter(user=user_profile).count()
+        total = total_relatives + total_offline_relatives
+
+        if total >= 15:
+            return Response(
+                {"error": "Maximum relative quota reached. You cannot add more relatives."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
             relative_profile = Profile.objects.get(id=relative_id)
         except Profile.DoesNotExist:
@@ -243,6 +255,17 @@ class AddOfflineRelative(APIView):
             return Response(
                 {"error": "User profile does not exist. Please create a profile first."},
                 status=status.HTTP_404_NOT_FOUND,
+            )
+            
+        # Check the total number of relatives and offline relatives
+        total_relatives = Relative.objects.filter(user=user_profile).count()
+        total_offline_relatives = OfflineRelative.objects.filter(user=user_profile).count()
+        total = total_relatives + total_offline_relatives
+
+        if total >= 15:
+            return Response(
+                {"error": "Maximum relative quota reached. You cannot add more relatives."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         serializer = OfflineRelativeSerializer(data=request.data)
