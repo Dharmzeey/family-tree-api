@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from utilities.error_handler import render_errors
 from .models import Profile, FamilyRelation, Relative, OfflineRelative
 from .serializers import ProfileSerializer, RelativeSerializer, RelationSerializer, OfflineRelativeSerializer
-from rest_framework.pagination import PageNumberPagination
+from utilities.pagiation import CustomPagination
 
 
 class CreateProfileView(APIView):
@@ -26,7 +26,7 @@ class CreateProfileView(APIView):
                 return Response(data, status=status.HTTP_409_CONFLICT)      
             data = {"data": serializer.data, "message": "Profile Created"}
             return Response(data, status=status.HTTP_201_CREATED)
-        return Response({"errors": render_errors(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": render_errors(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
 create_profile = CreateProfileView.as_view()
 
 
@@ -66,7 +66,7 @@ class EditProfileView(APIView):
             data = {"data": serializer.data, "message": "Profile Updated"}
             return Response(data, status=status.HTTP_200_OK)
         return Response(
-            {"errors": render_errors(serializer.errors)},
+            {"error": render_errors(serializer.errors)},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -74,23 +74,30 @@ edit_profile = EditProfileView.as_view()
 
 
 class GetRelations(ListAPIView):
-    """ 
-    This fetchs all the relations in the DB the likes of Father, Mother, Sister, Brother etc.
+    """
+    Fetches all the relations in the DB (e.g., Father, Mother, Sister, Brother, etc.)
+    and returns them wrapped in a "data" key.
     """
     permission_classes = [IsAuthenticated]
     serializer_class = RelationSerializer
     queryset = FamilyRelation.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        # Get the default response from the parent class
+        response = super().list(request, *args, **kwargs)
+
+        # Wrap the response data in a "data" key
+        wrapped_response = {"data": response.data}
+
+        # Return the modified response
+        return Response(wrapped_response)
+
 get_relations = GetRelations.as_view()
 
 
 class SearchRelatives(APIView):
     permission_classes = [IsAuthenticated]
-    pagination_class = PageNumberPagination
-    pagination_class.page_size = 30
-    pagination_class.page_size_query_param = "size"
-    pagination_class.max_page_size = 100
-    pagination_class.page_query_param = "page"
-
+    pagination_class = CustomPagination
 
     def get(self, request):
         search_query = request.query_params.get("query", "").strip()
@@ -282,7 +289,7 @@ class AddOfflineRelative(APIView):
                 status=status.HTTP_201_CREATED,
             )
         return Response(
-            {"errors": render_errors(serializer.errors)},
+            {"error": render_errors(serializer.errors)},
             status=status.HTTP_400_BAD_REQUEST,
         )
 add_offline_relative = AddOfflineRelative.as_view()

@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.core.exceptions import ValidationError
 from authentication.models import User
@@ -9,6 +10,7 @@ def validate_image_size(image):
 
 
 class Profile(models.Model):
+	uuid = models.UUIDField(editable=False, default=uuid.uuid4, unique=True)
 	user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="user_profile")
 	lineage_name = models.CharField(max_length=100, blank=True, null=True)
 	last_name = models.CharField(max_length=150, null=False)
@@ -39,6 +41,7 @@ class FamilyRelation(models.Model):
 	
 
 class Relative(models.Model):
+	uuid = models.UUIDField(editable=False, default=uuid.uuid4, unique=True)
 	user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="user_relative") # The current logged in user
 	relative = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="relative_relative") # The person the user is related to
 	relation = models.ForeignKey(FamilyRelation, on_delete=models.SET_NULL, related_name="relation_relative", null=True) # How is the person related to the user
@@ -54,6 +57,7 @@ class OfflineRelative(models.Model):
 	"""
 	This will be used to store relatives that are not registered on the platform
 	"""
+	uuid = models.UUIDField(editable=False, default=uuid.uuid4, unique=True)
 	user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="user_offline_relative") # The current logged in user
 	first_name = models.CharField(max_length=150, null=False)
 	last_name = models.CharField(max_length=150, null=False)
