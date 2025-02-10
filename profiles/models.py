@@ -70,3 +70,23 @@ class OfflineRelative(models.Model):
 
 	def __str__(self):
 		return f"{self.user} is a {self.relation} to {self.last_name} {self.first_name}"
+	
+
+class BondRequestNotification(models.Model):
+	"""
+	When a user sends a bond request to another user, this model will be used to store the request
+	"""
+	uuid = models.UUIDField(editable=False, default=uuid.uuid4, unique=True)
+	sender = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="sender_bond_request") # The person sending the request
+	receiver = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="receiver_bond_request") # The person receiving the request
+	relation = models.ForeignKey(FamilyRelation, on_delete=models.SET_NULL, related_name="relationship_bond_request", null=True) # The relationship the sender wants to establish with the receiver
+	created_at = models.DateTimeField(auto_now_add=True)
+	updated_at = models.DateTimeField(auto_now=True)
+	accepted = models.BooleanField(default=False)
+	
+	class Meta:
+		unique_together = ("sender", "receiver")
+		ordering = ['-created_at']
+
+	def __str__(self):
+		return f"{self.sender} sent a bond request to {self.receiver}"

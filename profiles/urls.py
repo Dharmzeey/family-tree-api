@@ -11,6 +11,10 @@ urlpatterns = [
     path("relations/", views.get_relations, name="get_relations"),
     path("relatives/search/", views.search_relatives, name="search_relatives"),
     path("relation/create/", views.create_relation, name="create_relation"),
+
+    path("bond-notifications/", views.view_bond_requests, name="view_bond_requests"),
+    path("process-bond/", views.process_bond_request, name="process_bond_request"),
+
     path("relatives/", views.view_relatives, name="view_relatives"),
     path("offline-relatives/", views.add_offline_relative, name="add_offline_relative"),
 ]

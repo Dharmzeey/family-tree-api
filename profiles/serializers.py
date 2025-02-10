@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Profile, Relative, FamilyRelation, OfflineRelative
+from .models import Profile, Relative, FamilyRelation, OfflineRelative, BondRequestNotification
 
 class ProfileSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
@@ -16,6 +16,27 @@ class RelationSerializer(serializers.ModelSerializer):
     class Meta:
         model = FamilyRelation
         fields = "__all__"
+
+
+class BondRequestNotificationSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()
+    lineage_name = serializers.SerializerMethodField()
+    class Meta:
+        model = BondRequestNotification
+        exclude = ("uuid", "created_at", "updated_at")
+
+    def get_id(self, obj):
+        return obj.uuid
+    
+    def get_lineage_name(self, obj):
+        return obj.sender.lineage_name
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        full_name = f"{instance.sender.last_name} {instance.sender.first_name} {instance.sender.other_name}"
+        representation['sender'] = full_name
+        representation['relation'] = instance.relation.name
+        return representation
 
 
 class RelativeSerializer(serializers.ModelSerializer):

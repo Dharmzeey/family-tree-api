@@ -7,8 +7,8 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from utilities.error_handler import render_errors
-from .models import Profile, FamilyRelation, Relative, OfflineRelative
-from .serializers import ProfileSerializer, RelativeSerializer, RelationSerializer, OfflineRelativeSerializer
+from .models import Profile, FamilyRelation, Relative, OfflineRelative, BondRequestNotification
+from .serializers import ProfileSerializer, RelativeSerializer, RelationSerializer, OfflineRelativeSerializer, BondRequestNotificationSerializer
 from utilities.pagiation import CustomPagination
 
 
@@ -26,7 +26,7 @@ class CreateProfileView(APIView):
                 return Response(data, status=status.HTTP_409_CONFLICT)      
             data = {"data": serializer.data, "message": "Profile Created"}
             return Response(data, status=status.HTTP_201_CREATED)
-        return Response({"error": render_errors(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"errors": render_errors(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
 create_profile = CreateProfileView.as_view()
 
 
@@ -66,7 +66,7 @@ class EditProfileView(APIView):
             data = {"data": serializer.data, "message": "Profile Updated"}
             return Response(data, status=status.HTTP_200_OK)
         return Response(
-            {"error": render_errors(serializer.errors)},
+            {"errors": render_errors(serializer.errors)},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -131,6 +131,7 @@ search_relatives = SearchRelatives.as_view()
 
 
 class CreateRelationsView(APIView):
+    # This will evaluate and then send notification to the other account
     permission_classes = [IsAuthenticated]
     # serializer_class = RelativeSerializer
     def post(self, request):
@@ -165,7 +166,7 @@ class CreateRelationsView(APIView):
             )
 
         try:
-            relative_profile = Profile.objects.get(id=relative_id)
+            relative_profile = Profile.objects.get(uuid=relative_id)
         except Profile.DoesNotExist:
             return Response(
                 {"error": "Invalid relative ID."},
@@ -189,29 +190,115 @@ class CreateRelationsView(APIView):
                 {"error": "This relationship already exists."},
                 status=status.HTTP_409_CONFLICT,
             )
-
-        try:
-            relative = Relative(
-                user=user_profile,
-                relative=relative_profile,
-                relation=relation,
-            )
-            relative.save()
-        except Exception as e:
+        
+        # This below will check if the notification already exists
+        existing_bond_request = BondRequestNotification.objects.filter(
+            sender=user_profile, receiver=relative_profile
+        ).exists()
+        if existing_bond_request:
             return Response(
-                {"error": f"An error occurred while saving the relationship: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                {"error": "A bond request has already been sent to this user."},
+                status=status.HTTP_409_CONFLICT,
             )
-
-        serializer = RelativeSerializer(relative, context={'request': request})
-        print(relative)
-        print(serializer)
+        
+        # After the above check, now the notification is created
+        # Create a bond request notification
+        bond_request = BondRequestNotification.objects.create(
+            sender=user_profile,
+            receiver=relative_profile,
+            relation=relation
+        )
+        bond_request.save()
         return Response(
-            {"data": serializer.data, "message": "Relationship created successfully."},
+            {"data": bond_request.uuid, "message": "Bond request sent successfully."},
             status=status.HTTP_201_CREATED,
         )
 create_relation = CreateRelationsView.as_view()
 
+
+class ViewBondRequests(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            user_profile = request.user.user_profile
+        except Profile.DoesNotExist:
+            return Response(
+                {"error": "User profile does not exist. Please create a profile first."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Fetch all bond requests sent to the current user
+        bond_requests = BondRequestNotification.objects.filter(receiver=user_profile).select_related("sender", "relation")
+
+        if not bond_requests.exists():
+            return Response(
+                {"error": "No bond requests found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = BondRequestNotificationSerializer(bond_requests, many=True, context={'request': request})
+        return Response(
+            {"data": serializer.data, "message": "Bond requests retrieved successfully."},
+            status=status.HTTP_200_OK,
+        )
+view_bond_requests = ViewBondRequests.as_view()
+
+
+class ProcessBondRequest(APIView):
+    # User can either accept or reject a bond request
+    # If accepted, the relationship will be created
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        try:
+            user_profile = request.user.user_profile
+        except Profile.DoesNotExist:
+            return Response(
+                {"error": "User profile does not exist. Please create a profile first."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        bond_request_id = request.data.get("bond_request_id")
+        accept = request.data.get("accept")
+
+        if not bond_request_id or accept is None:
+            return Response(
+                {"error": "Both bond request ID and accept status are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            bond_request = BondRequestNotification.objects.get(uuid=bond_request_id, receiver=user_profile)
+        except BondRequestNotification.DoesNotExist:
+            return Response(
+                {"error": "Invalid bond request ID."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if bond_request.accepted:
+            return Response(
+                {"error": "This bond request has already been accepted."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        if accept:
+            # Create a new relationship
+            relative = Relative.objects.create(
+                user=user_profile,
+                relative=bond_request.sender,
+                relation=bond_request.relationship
+            )
+            relative.save()
+
+        # Update the bond request status
+        bond_request.accepted = accept
+        bond_request.save()
+
+        return Response(
+            {"message": "Bond request processed successfully."},
+            status=status.HTTP_200_OK,
+        )
+process_bond_request = ProcessBondRequest.as_view()
 
 class ViewRelatives(APIView):
     permission_classes = [IsAuthenticated]
@@ -289,7 +376,7 @@ class AddOfflineRelative(APIView):
                 status=status.HTTP_201_CREATED,
             )
         return Response(
-            {"error": render_errors(serializer.errors)},
+            {"errors": render_errors(serializer.errors)},
             status=status.HTTP_400_BAD_REQUEST,
         )
 add_offline_relative = AddOfflineRelative.as_view()
