@@ -1,5 +1,6 @@
 from django.db import IntegrityError
 from django.db.models import Q
+from django.core.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -7,8 +8,8 @@ from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from utilities.error_handler import render_errors
-from .models import Profile, FamilyRelation, Relative, OfflineRelative, BondRequestNotification
-from .serializers import ProfileSerializer, RelativeSerializer, RelationSerializer, OfflineRelativeSerializer, BondRequestNotificationSerializer
+from .models import Profile, FamilyRelation, OnlineRelative, OfflineRelative, BondRequestNotification
+from .serializers import ProfileSerializer, OnlineRelativeSerializer, RelationSerializer, OfflineRelativeSerializer, BondRequestNotificationSerializer
 from utilities.pagiation import CustomPagination
 
 
@@ -155,9 +156,9 @@ class CreateRelationsView(APIView):
 
 
         # Check the total number of relatives and offline relatives
-        total_relatives = Relative.objects.filter(user=user_profile).count()
+        total_online_relatives = OnlineRelative.objects.filter(user=user_profile).count()
         total_offline_relatives = OfflineRelative.objects.filter(user=user_profile).count()
-        total = total_relatives + total_offline_relatives
+        total = total_online_relatives + total_offline_relatives
 
         if total >= 15:
             return Response(
@@ -182,7 +183,7 @@ class CreateRelationsView(APIView):
             )
 
         # Check if the relationship with user already exists by looking up if the user and a relative already exist
-        existing_relation = Relative.objects.filter(
+        existing_relation = OnlineRelative.objects.filter(
             user=user_profile, relative=relative_profile
         ).exists()
         if existing_relation:
@@ -283,16 +284,19 @@ class ProcessBondRequest(APIView):
 
         if accept:
             # Create a new relationship
-            relative = Relative.objects.create(
+            relative = OnlineRelative.objects.create(
                 user=user_profile,
                 relative=bond_request.sender,
-                relation=bond_request.relationship
+                relation=bond_request.relation
             )
             relative.save()
 
-        # Update the bond request status
-        bond_request.accepted = accept
-        bond_request.save()
+            # Update the bond request status and delete
+            # bond_request.accepted = accept
+        #     bond_request.save()
+        # else:
+        #     bond_request.accepted = False
+            bond_request.delete()
 
         return Response(
             {"message": "Bond request processed successfully."},
@@ -313,7 +317,7 @@ class ViewRelatives(APIView):
             )
 
         # Fetch all relatives of the current user
-        relatives = Relative.objects.filter(user=user_profile).select_related("relative", "relation")
+        relatives = OnlineRelative.objects.filter(user=user_profile).select_related("relative", "relation")
         offline_relatives = OfflineRelative.objects.filter(user=user_profile)
 
         # Check if the user has any relatives
@@ -322,13 +326,14 @@ class ViewRelatives(APIView):
                 {"error": "No relatives found for this user."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-
-        serializer = RelativeSerializer(relatives, many=True, context={'request': request})
+        user_serializer = ProfileSerializer(user_profile, context={'request': request})
+        serializer = OnlineRelativeSerializer(relatives, many=True, context={'request': request})
         offline_serializer = OfflineRelativeSerializer(offline_relatives, many=True, context={'request': request})
 
         return Response(
             {
                 "data": {
+                "user": user_serializer.data,
                 "relatives": serializer.data,
                 "offline_relatives": offline_serializer.data
             }, 
@@ -339,9 +344,58 @@ class ViewRelatives(APIView):
 view_relatives = ViewRelatives.as_view()
 
 
-class AddOfflineRelative(APIView):
+class ViewUserRelatives(APIView):
+    # This  view is similar to the one that fetch the logged in user relative, but rather the relatives of other user with uuid
     permission_classes = [IsAuthenticated]
 
+    def get(self, request, relative_id):
+        try:
+            # The above gets (relative_id) the id of the "Online Relative" Model and not the "Profile" Model, the after the Online Relative is gotten, then the profile is the looked up
+            online_relative_id = relative_id.split("_")[1] # This will rip off the "on_" and the "off_" prefix added by the serializer
+            user_profile = OnlineRelative.objects.get(uuid=online_relative_id).relative # first check the online relative model and then get the profile
+        except Profile.DoesNotExist:
+            return Response(
+                {"error": "User profile does not exist."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except ValidationError:
+            return Response(
+                {"error": "Invalid user id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # Fetch all relatives of the specified user
+        relatives = OnlineRelative.objects.filter(user=user_profile).select_related("relative", "relation")
+        offline_relatives = OfflineRelative.objects.filter(user=user_profile)
+
+        # Check if the user has any relatives
+        if not relatives.exists() and not offline_relatives.exists():
+            return Response(
+                {"error": "No relatives found for this user."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        user_serializer = ProfileSerializer(user_profile, context={'request': request})
+        online_serializer = OnlineRelativeSerializer(relatives, many=True, context={'request': request})
+        offline_serializer = OfflineRelativeSerializer(offline_relatives, many=True, context={'request': request})
+
+        return Response(
+            {
+                "data": {
+                "user": user_serializer.data,
+                "relatives": online_serializer.data,
+                "offline_relatives": offline_serializer.data
+            }, 
+            "message": "Relatives retrieved successfully."
+            },
+            status=status.HTTP_200_OK,
+        )
+view_user_relatives = ViewUserRelatives.as_view()
+    
+
+class AddOfflineRelative(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+    
     def post(self, request):
         try:
             user_profile = request.user.user_profile
@@ -352,7 +406,7 @@ class AddOfflineRelative(APIView):
             )
             
         # Check the total number of relatives and offline relatives
-        total_relatives = Relative.objects.filter(user=user_profile).count()
+        total_relatives = OnlineRelative.objects.filter(user=user_profile).count()
         total_offline_relatives = OfflineRelative.objects.filter(user=user_profile).count()
         total = total_relatives + total_offline_relatives
 

@@ -40,7 +40,7 @@ class FamilyRelation(models.Model):
 		return self.name
 	
 
-class Relative(models.Model):
+class OnlineRelative(models.Model):
 	uuid = models.UUIDField(editable=False, default=uuid.uuid4, unique=True)
 	user = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="user_relative") # The current logged in user
 	relative = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="relative_relative") # The person the user is related to
@@ -62,7 +62,7 @@ class OfflineRelative(models.Model):
 	first_name = models.CharField(max_length=150, null=False)
 	last_name = models.CharField(max_length=150, null=False)
 	other_name = models.CharField(max_length=100, blank=True, null=True)
-	picture = models.ImageField(upload_to="images", default="avatar.png", validators=[validate_image_size])
+	picture = models.ImageField(upload_to="images", default="avatar.png", validators=[validate_image_size], blank=True, null=True)
 	relation = models.ForeignKey(FamilyRelation, on_delete=models.SET_NULL, related_name="relation_offline_relative", null=True) # How is the person related to the user
 	
 	class Meta:

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Profile, Relative, FamilyRelation, OfflineRelative, BondRequestNotification
+from .models import Profile, OnlineRelative, FamilyRelation, OfflineRelative, BondRequestNotification
 
 class ProfileSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
@@ -21,6 +21,8 @@ class RelationSerializer(serializers.ModelSerializer):
 class BondRequestNotificationSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
     lineage_name = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
+    picture = serializers.SerializerMethodField()
     class Meta:
         model = BondRequestNotification
         exclude = ("uuid", "created_at", "updated_at")
@@ -30,16 +32,25 @@ class BondRequestNotificationSerializer(serializers.ModelSerializer):
     
     def get_lineage_name(self, obj):
         return obj.sender.lineage_name
+
+    def get_full_name(self, obj):
+        full_name = f"{obj.sender.last_name} {obj.sender.first_name} {obj.sender.other_name}"
+        return full_name
+
+    def get_picture(self, obj):
+        request = self.context.get('request')
+        if obj.sender.picture:
+            return request.build_absolute_uri(obj.sender.picture.url)
+        return None
     
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        full_name = f"{instance.sender.last_name} {instance.sender.first_name} {instance.sender.other_name}"
-        representation['sender'] = full_name
+        representation['sender'] = instance.sender.first_name
         representation['relation'] = instance.relation.name
         return representation
 
 
-class RelativeSerializer(serializers.ModelSerializer):
+class OnlineRelativeSerializer(serializers.ModelSerializer):
 
     id = serializers.SerializerMethodField()
     first_name = serializers.SerializerMethodField()
@@ -48,7 +59,7 @@ class RelativeSerializer(serializers.ModelSerializer):
     picture = serializers.SerializerMethodField()
 
     class Meta:
-        model = Relative
+        model = OnlineRelative
         exclude = ("user", "relative", "uuid") # Keep user and relative read-only
         read_only_fields = ["user"]
     
@@ -80,17 +91,20 @@ class RelativeSerializer(serializers.ModelSerializer):
 class OfflineRelativeSerializer(serializers.ModelSerializer):
 
     id = serializers.SerializerMethodField()
+    # picture = serializers.ImageField(required=False, allow_null=True)
 
     class Meta:
         model = OfflineRelative
         exclude = ("user","uuid")  # Keep user read-only
         read_only_fields = ["user",]
 
+
     # This below is because this and online serializer are sent together so to be able to differentiate
     def get_id(self, obj):
         return f"off_{obj.uuid}"
     
     def to_representation(self, instance):
+        print(instance)
         representation = super().to_representation(instance)
         representation['relation'] = instance.relation.name
         return representation
