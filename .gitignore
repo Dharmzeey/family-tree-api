@@ -3,3 +3,4 @@ migrations/
 __pychche__/
 .env
 rel.json
+db.sqlite3
