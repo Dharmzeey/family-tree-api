@@ -182,13 +182,13 @@ class CreateRelationsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Check if the relationship with user already exists by looking up if the user and a relative already exist
+        # Check if the relationship with user already exists by looking up if the user and a relative already exist in DB
         existing_relation = OnlineRelative.objects.filter(
             user=user_profile, relative=relative_profile
         ).exists()
         if existing_relation:
             return Response(
-                {"error": "This relationship already exists."},
+                {"error": "You already have a relationship with this Person."},
                 status=status.HTTP_409_CONFLICT,
             )
         
@@ -202,6 +202,18 @@ class CreateRelationsView(APIView):
                 status=status.HTTP_409_CONFLICT,
             )
         
+        # This below will check if a Bond Request has been sent to a user with the "Mother" or "Father" relation 
+        if relation.name in ["Father", "Mother"]:
+            existing_parent_bond_request = BondRequestNotification.objects.filter(
+            sender=user_profile, relation__name=relation.name
+            ).exists()
+            if existing_parent_bond_request:
+                return Response(
+                    {"error": f"Seriously? You can't send another {relation.name} request. One is enough."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+
         # Check if the proposed relationship is Father or Mother and verify it is already existed becasue you cannot have more than one father and one mother
         if relation.name in ["Father", "Mother"]:
             existing_parent_relation = OnlineRelative.objects.filter(
@@ -307,8 +319,6 @@ class ProcessBondRequest(APIView):
         else: 
             bond_request.delete() # Removes the notification from DB when rejected
         
-
-
         return Response(
             {"message": "Bond request processed successfully."},
             status=status.HTTP_200_OK,
@@ -401,6 +411,44 @@ class ViewUserRelatives(APIView):
             status=status.HTTP_200_OK,
         )
 view_user_relatives = ViewUserRelatives.as_view()
+
+class DeleteRelativeView(APIView):
+    permission_classes = [IsAuthenticated]
+    def delete(self, request, relative_id):
+        try:
+            user_profile = request.user.user_profile
+        except Profile.DoesNotExist:
+            return Response(
+                {"error": "User profile does not exist. Please create a profile first."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        relative_status = relative_id.split("_")[0] #This will get if it is "on" or "off"
+        try:
+            if relative_status == "on":
+                user_relative = OnlineRelative.objects.get(user=user_profile, uuid=relative_id.split("_")[1]) # the split extract the real uuid striping off the "on"
+                user_relative.delete()
+            elif relative_status == "off":
+                user_relative = OfflineRelative.objects.get(user=user_profile, uuid=relative_id.split("_")[1]) # the split extract the real uuid striping off the "on"
+                user_relative.delete()
+            return Response(
+                {
+                    "message": "Relative deleted successfully"
+                },
+                status=status.HTTP_200_OK
+            )
+        except ValidationError:
+            return Response(
+                {"error": "Invalid user id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except (OnlineRelative.DoesNotExist, OfflineRelative.DoesNotExist ):
+            return Response(
+                {
+                    "error": "This user does not have the queried relative"
+                }, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+delete_relative = DeleteRelativeView.as_view()
     
 
 class AddOfflineRelative(APIView):

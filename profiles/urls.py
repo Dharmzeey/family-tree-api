@@ -16,6 +16,8 @@ urlpatterns = [
     path("process-bond-notifications/", views.process_bond_request, name="process_bond_request"),
 
     path("relatives/", views.view_relatives, name="view_relatives"),
-    path("relatives/<str:relative_id>/", views.view_user_relatives, name="view_user_relatives"),
+    path("relatives/<str:relative_id>/", views.view_user_relatives, name="view_user_relatives"), # View
+    path("relatives/<str:relative_id>/delete/", views.delete_relative, name="delete_relative"), # Delete relative (async)
+
     path("offline-relatives/", views.add_offline_relative, name="add_offline_relative"),
 ]

@@ -111,7 +111,6 @@ class OfflineRelativeSerializer(serializers.ModelSerializer):
         return f"off_{obj.uuid}"
     
     def to_representation(self, instance):
-        print(instance)
         representation = super().to_representation(instance)
         representation['relation'] = instance.relation.name
         return representation

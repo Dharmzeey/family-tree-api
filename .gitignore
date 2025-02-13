@@ -2,3 +2,4 @@ media/
 migrations/
 __pychche__/
 .env
+rel.json
