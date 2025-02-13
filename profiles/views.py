@@ -61,7 +61,7 @@ class EditProfileView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        serializer = self.serializer_class(profile, data=request.data, partial=True)
+        serializer = self.serializer_class(profile, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             data = {"data": serializer.data, "message": "Profile Updated"}
@@ -202,6 +202,19 @@ class CreateRelationsView(APIView):
                 status=status.HTTP_409_CONFLICT,
             )
         
+        # Check if the proposed relationship is Father or Mother and verify it is already existed becasue you cannot have more than one father and one mother
+        if relation.name in ["Father", "Mother"]:
+            existing_parent_relation = OnlineRelative.objects.filter(
+                user=user_profile, relation__name=relation.name
+            ).exists() or OfflineRelative.objects.filter(
+                user=user_profile, relation__name=relation.name
+            ).exists()
+            if existing_parent_relation:
+                return Response(
+                    {"error": f"You cannot have more than one {relation.name}."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        
         # After the above check, now the notification is created
         # Create a bond request notification
         bond_request = BondRequestNotification.objects.create(
@@ -274,29 +287,27 @@ class ProcessBondRequest(APIView):
             return Response(
                 {"error": "Invalid bond request ID."},
                 status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if bond_request.accepted:
-            return Response(
-                {"error": "This bond request has already been accepted."},
-                status=status.HTTP_409_CONFLICT,
-            )
+            )           
 
         if accept:
-            # Create a new relationship
-            relative = OnlineRelative.objects.create(
-                user=user_profile,
-                relative=bond_request.sender,
-                relation=bond_request.relation
+            try:
+                # Create a new relationship where the user will be the person that sent the request and relative will be the person accepting, so the relative is created at that person' end
+                relative = OnlineRelative.objects.create(
+                    user=bond_request.sender,
+                    relative=user_profile,
+                    relation=bond_request.relation
+                )
+                relative.save()
+                bond_request.delete() # Removes the notification from DB after acceptance
+            except IntegrityError:
+                return Response(
+                {"error": "This relationship with this user already exists."},
+                status=status.HTTP_409_CONFLICT,
             )
-            relative.save()
+        else: 
+            bond_request.delete() # Removes the notification from DB when rejected
+        
 
-            # Update the bond request status and delete
-            # bond_request.accepted = accept
-        #     bond_request.save()
-        # else:
-        #     bond_request.accepted = False
-            bond_request.delete()
 
         return Response(
             {"message": "Bond request processed successfully."},
@@ -416,10 +427,24 @@ class AddOfflineRelative(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        serializer = OfflineRelativeSerializer(data=request.data)
+        serializer = OfflineRelativeSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
+            relation = serializer.validated_data['relation']
+            # Check if the proposed relationship is Father or Mother and verify it is already existed becasue you cannot have more than one father and one mother
+            if relation.name in ["Father", "Mother"]:
+                existing_parent_relation = OnlineRelative.objects.filter(
+                    user=user_profile, relation__name=relation.name
+                ).exists() or OfflineRelative.objects.filter(
+                    user=user_profile, relation__name=relation.name
+                ).exists()
+                if existing_parent_relation:
+                    return Response(
+                        {"error": f"You cannot have more than one {relation.name}."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             try:
                 relative = serializer.save(user=user_profile)
+                pass
             except IntegrityError:
                 return Response(
                     {"error": "This relative already exists."},

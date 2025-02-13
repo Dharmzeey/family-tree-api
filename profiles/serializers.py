@@ -92,11 +92,18 @@ class OfflineRelativeSerializer(serializers.ModelSerializer):
 
     id = serializers.SerializerMethodField()
     # picture = serializers.ImageField(required=False, allow_null=True)
+    # relation = serializers.PrimaryKeyRelatedField(queryset=FamilyRelation.objects.all())
 
     class Meta:
         model = OfflineRelative
         exclude = ("user","uuid")  # Keep user read-only
         read_only_fields = ["user",]
+
+    def validate(self, data):
+        # Check if 'relation' is present in the input data
+        if 'relation' not in data:
+            raise serializers.ValidationError({"relation": "This field is required."})
+        return data        
 
 
     # This below is because this and online serializer are sent together so to be able to differentiate

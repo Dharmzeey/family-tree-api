@@ -50,7 +50,7 @@ class OnlineRelative(models.Model):
 		unique_together = ("user", "relative")
 
 	def __str__(self):
-		return f"{self.user} is a {self.relation} to {self.relative}"
+		return f"{self.relative} is a {self.relation} to {self.user}"
 	
 
 class OfflineRelative(models.Model):
@@ -62,14 +62,14 @@ class OfflineRelative(models.Model):
 	first_name = models.CharField(max_length=150, null=False)
 	last_name = models.CharField(max_length=150, null=False)
 	other_name = models.CharField(max_length=100, blank=True, null=True)
-	picture = models.ImageField(upload_to="images", default="avatar.png", validators=[validate_image_size], blank=True, null=True)
+	picture = models.ImageField(upload_to="images", default="avatar.png", validators=[validate_image_size], blank=True)
 	relation = models.ForeignKey(FamilyRelation, on_delete=models.SET_NULL, related_name="relation_offline_relative", null=True) # How is the person related to the user
 	
 	class Meta:
 		unique_together = ("user", "first_name", "last_name")
 
 	def __str__(self):
-		return f"{self.user} is a {self.relation} to {self.last_name} {self.first_name}"
+		return f"{self.last_name} {self.first_name} is a {self.relation} to {self.user}"
 	
 
 class BondRequestNotification(models.Model):
