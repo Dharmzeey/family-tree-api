@@ -160,7 +160,7 @@ class CreateRelationsView(APIView):
         total_offline_relatives = OfflineRelative.objects.filter(user=user_profile).count()
         total = total_online_relatives + total_offline_relatives
 
-        if total >= 15:
+        if total > 15:
             return Response(
                 {"error": "Maximum relative quota reached. You cannot add more relatives."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -339,7 +339,7 @@ class ViewRelatives(APIView):
 
         # Fetch all relatives of the current user
         relatives = OnlineRelative.objects.filter(user=user_profile).select_related("relative", "relation")
-        offline_relatives = OfflineRelative.objects.filter(user=user_profile)
+        offline_relatives = OfflineRelative.objects.filter(user=user_profile).select_related("relation")
 
         # Check if the user has any relatives
         if not relatives.exists() and not offline_relatives.exists():
@@ -387,7 +387,7 @@ class ViewUserRelatives(APIView):
         
         # Fetch all relatives of the specified user
         relatives = OnlineRelative.objects.filter(user=user_profile).select_related("relative", "relation")
-        offline_relatives = OfflineRelative.objects.filter(user=user_profile)
+        offline_relatives = OfflineRelative.objects.filter(user=user_profile).select_related("relation")
 
         # Check if the user has any relatives
         if not relatives.exists() and not offline_relatives.exists():
@@ -444,7 +444,7 @@ class DeleteRelativeView(APIView):
         except (OnlineRelative.DoesNotExist, OfflineRelative.DoesNotExist ):
             return Response(
                 {
-                    "error": "This user does not have the queried relative"
+                    "error": "This selected relative does not belong to you, so you cannot modify"
                 }, 
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -469,7 +469,7 @@ class AddOfflineRelative(APIView):
         total_offline_relatives = OfflineRelative.objects.filter(user=user_profile).count()
         total = total_relatives + total_offline_relatives
 
-        if total >= 15:
+        if total > 15:
             return Response(
                 {"error": "Maximum relative quota reached. You cannot add more relatives."},
                 status=status.HTTP_400_BAD_REQUEST,

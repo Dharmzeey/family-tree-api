@@ -58,6 +58,8 @@ class OnlineRelativeSerializer(serializers.ModelSerializer):
     other_name = serializers.SerializerMethodField()
     picture = serializers.SerializerMethodField()
 
+    has_relatives = serializers.SerializerMethodField() # This field will hold boolean for if the current relative that is being displayed as a relative to the CENTRAL user also has any associated relative. This will help to show a button "VIEW RELATIVE" on the relative card. The get_has_relativse() fn does the work
+
     class Meta:
         model = OnlineRelative
         exclude = ("user", "relative", "uuid") # Keep user and relative read-only
@@ -81,6 +83,12 @@ class OnlineRelativeSerializer(serializers.ModelSerializer):
         if obj.relative.picture:
             return request.build_absolute_uri(obj.relative.picture.url)
         return None
+    
+    def get_has_relatives(self, obj):
+        # If A (obj) is the central profile being checked, and B, C, D, E (.relatives) are the relatives to A. so to know if B, C, D and E also have relatives (.user_relative) associated with them is what the method checks.
+
+        # The obj.relative will hold the Profile Model accessed from the OnlineRelative Model, then the .user_relative will use the reverse lookup from Profile-> OnlineRelative to fetch all the OnlineRelative which the user has.
+        return obj.relative.user_relative.exists()
     
     def to_representation(self, instance):
         representation = super().to_representation(instance)
