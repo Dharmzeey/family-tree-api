@@ -7,7 +7,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
-from utilities.error_handler import render_errors
+from utilities.validators import profile_check
 from .models import Profile, FamilyRelation, OnlineRelative, OfflineRelative, BondRequestNotification
 from .serializers import ProfileSerializer, OnlineRelativeSerializer, RelationSerializer, OfflineRelativeSerializer, BondRequestNotificationSerializer
 from utilities.pagiation import CustomPagination
@@ -27,7 +27,7 @@ class CreateProfileView(APIView):
                 return Response(data, status=status.HTTP_409_CONFLICT)      
             data = {"data": serializer.data, "message": "Profile Created"}
             return Response(data, status=status.HTTP_201_CREATED)
-        return Response({"errors": render_errors(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 create_profile = CreateProfileView.as_view()
 
 
@@ -53,13 +53,7 @@ class EditProfileView(APIView):
     serializer_class = ProfileSerializer
 
     def put(self, request):
-        try:
-            profile = request.user.user_profile
-        except AttributeError:
-            return Response(
-                {"error": "Profile does not exist. Please create a profile first."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        profile = profile_check(request) 
 
         serializer = self.serializer_class(profile, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
@@ -67,7 +61,7 @@ class EditProfileView(APIView):
             data = {"data": serializer.data, "message": "Profile Updated"}
             return Response(data, status=status.HTTP_200_OK)
         return Response(
-            {"errors": render_errors(serializer.errors)},
+            {"errors": serializer.errors},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -137,13 +131,7 @@ class CreateRelationsView(APIView):
     # serializer_class = RelativeSerializer
     def post(self, request):
         # Get the current user's profile
-        try:
-            user_profile = request.user.user_profile
-        except Profile.DoesNotExist:
-            return Response(
-                {"error": "User profile does not exist. Please create a profile first."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        user_profile = profile_check(request)
         # serializer = self.serializer_class(data=request.data)
         relative_id = request.data.get("relative_id")
         relation_id = request.data.get("relation_id")
@@ -246,13 +234,7 @@ class ViewBondRequests(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            user_profile = request.user.user_profile
-        except Profile.DoesNotExist:
-            return Response(
-                {"error": "User profile does not exist. Please create a profile first."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        user_profile = profile_check(request)
 
         # Fetch all bond requests sent to the current user
         bond_requests = BondRequestNotification.objects.filter(receiver=user_profile).select_related("sender", "relation")
@@ -276,13 +258,7 @@ class ProcessBondRequest(APIView):
     # If accepted, the relationship will be created
     permission_classes = [IsAuthenticated]
     def post(self, request):
-        try:
-            user_profile = request.user.user_profile
-        except Profile.DoesNotExist:
-            return Response(
-                {"error": "User profile does not exist. Please create a profile first."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        user_profile = profile_check(request)
 
         bond_request_id = request.data.get("bond_request_id")
         accept = request.data.get("accept")
@@ -329,13 +305,7 @@ class ViewRelatives(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        try:
-            user_profile = request.user.user_profile
-        except Profile.DoesNotExist:
-            return Response(
-                {"error": "User profile does not exist. Please create a profile first."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        user_profile = profile_check(request)
 
         # Fetch all relatives of the current user
         relatives = OnlineRelative.objects.filter(user=user_profile).select_related("relative", "relation")
@@ -415,13 +385,7 @@ view_user_relatives = ViewUserRelatives.as_view()
 class DeleteRelativeView(APIView):
     permission_classes = [IsAuthenticated]
     def delete(self, request, relative_id):
-        try:
-            user_profile = request.user.user_profile
-        except Profile.DoesNotExist:
-            return Response(
-                {"error": "User profile does not exist. Please create a profile first."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        user_profile = profile_check(request)
         relative_status = relative_id.split("_")[0] #This will get if it is "on" or "off"
         try:
             if relative_status == "on":
@@ -456,13 +420,7 @@ class AddOfflineRelative(APIView):
     parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request):
-        try:
-            user_profile = request.user.user_profile
-        except Profile.DoesNotExist:
-            return Response(
-                {"error": "User profile does not exist. Please create a profile first."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        user_profile = profile_check(request)
             
         # Check the total number of relatives and offline relatives
         total_relatives = OnlineRelative.objects.filter(user=user_profile).count()
@@ -503,7 +461,7 @@ class AddOfflineRelative(APIView):
                 status=status.HTTP_201_CREATED,
             )
         return Response(
-            {"errors": render_errors(serializer.errors)},
+            {"errors": serializer.errors},
             status=status.HTTP_400_BAD_REQUEST,
         )
 add_offline_relative = AddOfflineRelative.as_view()

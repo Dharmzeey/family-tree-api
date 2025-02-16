@@ -7,6 +7,7 @@ urlpatterns = [
     path('adedamola/', admin.site.urls),
     path('v1/authentication/', include('authentication.urls')),
     path('v1/profiles/', include('profiles.urls')),
+    path('v1/families/', include('families.urls')),
 ]
 
 if settings.DEBUG:

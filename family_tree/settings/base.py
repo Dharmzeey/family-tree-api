@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     # my apps
     'authentication.apps.AuthenticationConfig',
     'profiles.apps.ProfilesConfig',
+    'families.apps.FamiliesConfig',
 ]
 
 MIDDLEWARE = [

@@ -9,6 +9,7 @@ def render_errors(errors):
   Returns:
       _type_: Dict[str, list]
   """
+  print(errors)
   custom_errors = {}
   for field, errors in errors.items():
     custom_errors[field] = ', '.join(errors)

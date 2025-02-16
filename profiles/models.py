@@ -1,7 +1,9 @@
 import uuid
 from django.db import models
 from django.core.exceptions import ValidationError
-from authentication.models import User
+from django.contrib.auth import get_user_model
+
+User = get_user_model() 
 
 def validate_image_size(image):
     MAX_IMAGE_SIZE = 850 * 1024  # 2MB

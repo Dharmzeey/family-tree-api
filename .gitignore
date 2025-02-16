@@ -1,6 +1,6 @@
 media/
 migrations/
-__pychche__/
+__pycache__/
 .env
 rel.json
 db.sqlite3
