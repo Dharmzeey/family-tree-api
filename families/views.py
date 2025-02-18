@@ -1,4 +1,5 @@
 from django.db import IntegrityError
+from django.db.models import Q
 from django.core.exceptions import ValidationError
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -18,6 +19,10 @@ class CreateFamilyView(APIView):
         profile = profile_check(request)
         serializer = FamilySerializer(data=request.data)
 
+        handler_check = Family.objects.filter(family_handlers__operator__user=request.user)
+        if handler_check.exists():
+            return Response({"error": f"You are already an handler of '{handler_check[0].name}' family"}, status=status.HTTP_400_BAD_REQUEST)
+
         if serializer.is_valid():
             try:
                 serializer.save(author=profile)
@@ -30,12 +35,20 @@ class CreateFamilyView(APIView):
 
 create_family = CreateFamilyView.as_view()
 
-
+ 
 class ViewFamilyView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, family_id):
         profile_check(request)
+        # try:
+        #     family = Family.objects.filter(
+        #         Q(author__user=request.user) | Q(family_handlers__operator__user=request.user)).distinct()[0]
+        #     serializer = FamilySerializer(family)
+        #     data = {"data": serializer.data, "message": "Family Retrieved"}
+        #     return Response(data, status=status.HTTP_200_OK)
+        # except IndexError:
+        #     return Response({"error": "Family Does not Exist"}, status=status.HTTP_404_NOT_FOUND)            
 
         try:
             family = Family.objects.get(uuid=family_id)
@@ -43,7 +56,7 @@ class ViewFamilyView(APIView):
             data = {"data": serializer.data, "message": "Family Retrieved"}
             return Response(data, status=status.HTTP_200_OK)
         
-        except Family.DoesNotExist:
+        except Family.DoesNotExist as e:
             return Response({"error": "Family Does not Exist"}, status=status.HTTP_404_NOT_FOUND)
         except ValidationError:
             return Response(
@@ -59,6 +72,9 @@ class UpdateFamilyView(APIView):
 
     def put(self, request, family_id):
         profile = profile_check(request)
+
+        # family = Family.objects.filter(
+        #     Q(author__user=request.user) | Q(family_handlers__operator__user=request.user)).distinct()[0]
 
         try:
             family = Family.objects.get(uuid=family_id)
@@ -100,7 +116,7 @@ class AddHandlerView(APIView):
         try:
             Handler.objects.create(family=family, operator=operator)
         except IntegrityError:
-            return Response({"error": "This person is already your handler"}, status=status.HTTP_409_CONFLICT)
+            return Response({"error": "This person is already your handler or handler of another account"}, status=status.HTTP_409_CONFLICT)
         return Response({"message": "Handler added successfully"}, status=status.HTTP_201_CREATED)
     
 add_handler = AddHandlerView.as_view()

@@ -132,6 +132,6 @@ class FamilySerializer(serializers.ModelSerializer):
     
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation["author"] = f"{instance.author.last_name} {instance.author.first_name}"
+        representation["author"] = f"{instance.author.last_name} {instance.author.first_name} {instance.author.other_name if instance.author.other_name else ''}"
         return representation
     

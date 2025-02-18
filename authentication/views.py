@@ -18,6 +18,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 # from authentication.backends import EmailOrPhoneBackend
 
 from utilities.error_handler import render_errors
+from families.models import Family, Handler
 
 from . import serializers as CustomSerializers
 
@@ -103,9 +104,24 @@ class UserLoginView(APIView):
 
         login(request, user, backend="authentication.backends.EmailOrPhoneBackend")
         refresh = RefreshToken.for_user(user)
+        family = Family.objects.filter(
+            Q(author__user=user) | Q(family_handlers__operator__user=user)
+                ).distinct().first()
+
+        if family:
+            is_author = family.author and family.author.user == user
+            is_handler = family.family_handlers.filter(operator__user=user).exists() # Reverse lookup
+        else:
+            is_author = is_handler = False
+
         data = {
-            "access_token": str(refresh.access_token),
-            "refresh_token": str(refresh)
+            "data": {
+                "is_author": is_author,
+                "is_handler": is_handler,
+                "family_id": family.uuid if family else None,
+            },
+           "access_token": str(refresh.access_token),
+           "refresh_token": str(refresh)
         }
         return Response(data, status=status.HTTP_200_OK)
 

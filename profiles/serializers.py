@@ -1,15 +1,26 @@
+from django.db.models import Q
 from rest_framework import serializers
 from .models import Profile, OnlineRelative, FamilyRelation, OfflineRelative, BondRequestNotification
+from families.models import Family
 
 class ProfileSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
+    family_id = serializers.SerializerMethodField()
+
     class Meta:
         model = Profile
-        exclude = ("uuid","user")
+        exclude = ("uuid", "user")
         read_only_fields = ["user"]
 
     def get_id(self, obj):
         return obj.uuid
+
+    def get_family_id(self, obj):
+        family = Family.objects.filter(
+            Q(author=obj) | Q(family_handlers__operator=obj)
+        ).distinct().first()
+
+        return family.uuid if family else None
 
 
 class RelationSerializer(serializers.ModelSerializer):
@@ -99,8 +110,6 @@ class OnlineRelativeSerializer(serializers.ModelSerializer):
 class OfflineRelativeSerializer(serializers.ModelSerializer):
 
     id = serializers.SerializerMethodField()
-    # picture = serializers.ImageField(required=False, allow_null=True)
-    # relation = serializers.PrimaryKeyRelatedField(queryset=FamilyRelation.objects.all())
 
     class Meta:
         model = OfflineRelative

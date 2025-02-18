@@ -21,7 +21,7 @@ class Family(models.Model):
 class Handler(models.Model):
     uuid = models.UUIDField(editable=False, default=uuid.uuid4, unique=True)
     family = models.ForeignKey(Family, on_delete=models.CASCADE, related_name="family_handlers")
-    operator = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True, related_name="operator_handler")
+    operator = models.OneToOneField(Profile, on_delete=models.SET_NULL, null=True, related_name="operator_handler")
 
     class Meta:
         unique_together = ("family", "operator")
@@ -29,8 +29,6 @@ class Handler(models.Model):
     def __str__(self):
         return f"{self.operator} is an operator for {self.family} family"
     
-
-
 
 class Origin(models.Model):
     uuid = models.UUIDField(editable=False, default=uuid.uuid4, unique=True)
@@ -73,6 +71,9 @@ class Eulogy(models.Model):
 
     def __str__(self):
         return f"{self.family} --- {self.details[:30]}..." if len(self.details) > 30 else f"{self.family} --- {self.details}"
+    
+    class Meta:
+        verbose_name_plural = "Eulogies"
 
 class FamilyHead(models.Model):
     uuid = models.UUIDField(editable=False, default=uuid.uuid4, unique=True)
@@ -84,6 +85,7 @@ class FamilyHead(models.Model):
 
     class Meta:
         unique_together = ("family", "person")
+        ordering = ["date_to"]
 
     @property
     def still_on_throne(self):
