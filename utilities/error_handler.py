@@ -1,19 +1,19 @@
-def render_errors(errors):
-  """_summary_
-    Renders the error messages from the serializer.errors dictionary.
-    This takes all the error messages of a single field and joins them into a single string.
+# def render_errors(errors):
+#   """_summary_
+#     Renders the error messages from the serializer.errors dictionary.
+#     This takes all the error messages of a single field and joins them into a single string.
 
-  Args:
-      errors (_type_): serializer.errors
+#   Args:
+#       errors (_type_): serializer.errors
 
-  Returns:
-      _type_: Dict[str, list]
-  """
-  print(errors)
-  custom_errors = {}
-  for field, errors in errors.items():
-    custom_errors[field] = ', '.join(errors)
-  return custom_errors
+#   Returns:
+#       _type_: Dict[str, list]
+#   """
+#   print(errors)
+#   custom_errors = {}
+#   for field, errors in errors.items():
+#     custom_errors[field] = ', '.join(errors)
+#   return custom_errors
 
 
 # def render_errors(errors):

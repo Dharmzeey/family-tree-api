@@ -34,6 +34,7 @@ class FamilyHeadSerializer(serializers.ModelSerializer):
 class HandlerSerializer(serializers.ModelSerializer):
 
     id = serializers.SerializerMethodField()
+    operator_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Handler
@@ -41,6 +42,9 @@ class HandlerSerializer(serializers.ModelSerializer):
 
     def get_id(self, obj):
         return obj.uuid
+    
+    def get_operator_id(self, obj):
+        return obj.operator.uuid
     
     def to_representation(self, instance):
         representation = super().to_representation(instance)

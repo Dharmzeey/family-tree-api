@@ -17,7 +17,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 # from authentication.backends import EmailOrPhoneBackend
 
-from utilities.error_handler import render_errors
+# from utilities.error_handler import render_errors
 from families.models import Family, Handler
 
 from . import serializers as CustomSerializers
@@ -74,7 +74,7 @@ class UserCreateView(APIView):
         return Response(data, status=status.HTTP_201_CREATED)
       except IntegrityError:
         return Response({'error': 'User with this email or Phone Number already exists.'}, status=status.HTTP_409_CONFLICT)
-    data = {"errors": render_errors(serializer.errors)}
+    data = {"errors": serializer.errors}
     return Response(data, status=status.HTTP_400_BAD_REQUEST)
 user_create = UserCreateView.as_view()
 
@@ -85,7 +85,7 @@ class UserLoginView(APIView):
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if not serializer.is_valid():
-            return Response({"errors": render_errors(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
         email = serializer.validated_data.get("email")
         phone_number = serializer.validated_data.get("phone_number")
@@ -165,7 +165,7 @@ class VerifyEmailView(APIView):
                 return Response({"message": "Email verified successfully"}, status=status.HTTP_200_OK)
             elif cached_data['email_pin'] != serializer.data['email_pin']:
                 return Response({"error": "Invalid PIN"}, status=status.HTTP_403_FORBIDDEN)
-        return Response({"errors": render_errors(serializer.errors)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 verify_email = VerifyEmailView.as_view()
 
 
@@ -237,7 +237,7 @@ class RequestPasswordResetView(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
         return Response(
-            {"errors": render_errors(serializer.errors)}, 
+            {"errors": serializer.errors}, 
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -313,7 +313,7 @@ class VerifyPasswordResetPinView(APIView):
             }, status=status.HTTP_200_OK)
             
         return Response(
-            {"errors": render_errors(serializer.errors)}, 
+            {"errors": serializer.errors}, 
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -363,7 +363,7 @@ class CreateNewPasswordView(APIView):
                 )
                 
         return Response(
-            {"errors": render_errors(serializer.errors)}, 
+            {"errors": serializer.errors}, 
             status=status.HTTP_400_BAD_REQUEST
         )
 create_new_password = CreateNewPasswordView.as_view()
