@@ -6,28 +6,36 @@ from .models import Family, FamilyHead, Handler, Origin, HouseInfo, BeliefSystem
 class FamilyHeadSerializer(serializers.ModelSerializer):
 
     id = serializers.SerializerMethodField()
-    person = serializers.UUIDField()
+    person_id = serializers.UUIDField(write_only=True, required=False) # This is used for creation
+    person = serializers.SerializerMethodField() # is used to render viewing the person
     still_on_throne = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = FamilyHead
-        exclude = "uuid", "family",
+        exclude = "uuid", "family", 
 
     def get_id(self, obj):
         return obj.uuid
+    
+    def get_person(self, obj):
+        return f"{obj.person.last_name} {obj.person.first_name} {obj.person.other_name if obj.person.other_name else ''}"
     
     def get_still_on_throne(self, obj):
         return obj.still_on_throne 
     
     def create(self, validated_data):
-        person_uuid = validated_data.pop("person")  # Extract person UUID
+        person_uuid = validated_data.pop("person_id")  # Extract person UUID
         try:
             person = Profile.objects.get(uuid=person_uuid)  # Get Profile instance
         except Profile.DoesNotExist:
-            raise serializers.ValidationError({"person": "Profile with this UUID does not exist."})
-
+            raise serializers.ValidationError({"error": "Person with this ID does not exist."})
+        
         family_head = FamilyHead.objects.create(person=person, **validated_data)
         return family_head
+    
+    # def update(self, instance, validated_data):
+    #     validated_data.pop("person", None)  # Remove person if present in validated_data
+    #     return super().update(instance, validated_data)
     
     
 

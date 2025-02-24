@@ -25,8 +25,8 @@ urlpatterns = [
     path("<uuid:family_id>/eulogy/add/", views.add_eulogy, name="add_eulogy"),
     path("<uuid:family_id>/eulogy/update/", views.update_eulogy, name="update_eulogy"),
 
-    path("<uuid:family_id>/family-head/add/", views.add_family_head, name="add_family_head"),
-    path("<uuid:family_id>/family-head/update/", views.update_family_head, name="update_family_head"),
-    path("<uuid:family_id>/family-head/<uuid:family_head_id>/delete/", views.update_family_head, name="update_family_head"),
+    path("<uuid:family_id>/family-heads/add/", views.add_family_head, name="add_family_head"),
+    path("<uuid:family_id>/family-heads/<uuid:family_head_id>/update/", views.update_family_head, name="update_family_head"),
+    path("<uuid:family_id>/family-heads/<uuid:family_head_id>/delete/", views.delete_family_head, name="update_family_head"),
 
 ]

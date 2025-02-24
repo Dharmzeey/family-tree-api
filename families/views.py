@@ -458,7 +458,7 @@ add_family_head = AddFamilyHeadView.as_view()
 class UpdateFamilyHeadView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def put(self, request, family_id):
+    def put(self, request, family_id, family_head_id): #This family_head_id is the uuid of the FamilyHead model and not the Profile Model
         profile = profile_check(request)
 
         try:
@@ -467,10 +467,10 @@ class UpdateFamilyHeadView(APIView):
             return Response({"error": "Family not found"}, status=status.HTTP_404_NOT_FOUND)
 
         if (profile != family.author) and (profile not in [handler.operator for handler in family.family_handlers.all()]):
-            return Response({"error": "You are not authorized to update a family head"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "You are not authorized to update this family head"}, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            family_head = family.family_head
+            family_head = family.family_heads.all().get(uuid=family_head_id)
         except FamilyHead.DoesNotExist:
             return Response({"error": "Family head not found for this family"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -487,7 +487,7 @@ update_family_head = UpdateFamilyHeadView.as_view()
 class DeleteFamilyHeadView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request, family_id, family_head_id):
+    def delete(self, request, family_id, family_head_id): #This family_head_id is the uuid of the FamilyHead model and not the Profile Model
         profile = profile_check(request)
 
         try:
@@ -499,7 +499,7 @@ class DeleteFamilyHeadView(APIView):
             return Response({"error": "You are not authorized to delete a family head"}, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            family_head = family.family_heads.all().get(person=family_head_id)
+            family_head = family.family_heads.all().get(uuid=family_head_id) 
             family_head.delete()
             return Response({"message": "Family head deleted successfully"}, status=status.HTTP_200_OK)
         except FamilyHead.DoesNotExist:
