@@ -11,6 +11,8 @@ from utilities.validators import profile_check
 from .models import Profile, FamilyRelation, OnlineRelative, OfflineRelative, BondRequestNotification
 from .serializers import ProfileSerializer, OnlineRelativeSerializer, RelationSerializer, OfflineRelativeSerializer, BondRequestNotificationSerializer
 from utilities.pagiation import CustomPagination
+from families.models import Family
+from families.serializers import FamilySerializer
 
 
 class CreateProfileView(APIView):
@@ -53,7 +55,8 @@ class EditProfileView(APIView):
     serializer_class = ProfileSerializer
 
     def put(self, request):
-        profile = profile_check(request) 
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.serializer_class(profile, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
@@ -131,7 +134,8 @@ class CreateRelationsView(APIView):
     # serializer_class = RelativeSerializer
     def post(self, request):
         # Get the current user's profile
-        user_profile = profile_check(request)
+        if not (user_profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
         # serializer = self.serializer_class(data=request.data)
         relative_id = request.data.get("relative_id")
         relation_id = request.data.get("relation_id")
@@ -234,7 +238,9 @@ class ViewBondRequests(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user_profile = profile_check(request)
+        if not (user_profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
+
 
         # Fetch all bond requests sent to the current user
         bond_requests = BondRequestNotification.objects.filter(receiver=user_profile).select_related("sender", "relation")
@@ -258,7 +264,8 @@ class ProcessBondRequest(APIView):
     # If accepted, the relationship will be created
     permission_classes = [IsAuthenticated]
     def post(self, request):
-        user_profile = profile_check(request)
+        if not (user_profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         bond_request_id = request.data.get("bond_request_id")
         accept = request.data.get("accept")
@@ -301,11 +308,13 @@ class ProcessBondRequest(APIView):
         )
 process_bond_request = ProcessBondRequest.as_view()
 
+
 class ViewRelatives(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user_profile = profile_check(request)
+        if not (user_profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         # Fetch all relatives of the current user
         relatives = OnlineRelative.objects.filter(user=user_profile).select_related("relative", "relation")
@@ -382,10 +391,12 @@ class ViewUserRelatives(APIView):
         )
 view_user_relatives = ViewUserRelatives.as_view()
 
+
 class DeleteRelativeView(APIView):
     permission_classes = [IsAuthenticated]
     def delete(self, request, relative_id):
-        user_profile = profile_check(request)
+        if not (user_profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
         relative_status = relative_id.split("_")[0] #This will get if it is "on" or "off"
         try:
             if relative_status == "on":
@@ -420,7 +431,8 @@ class AddOfflineRelative(APIView):
     parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request):
-        user_profile = profile_check(request)
+        if not (user_profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
             
         # Check the total number of relatives and offline relatives
         total_relatives = OnlineRelative.objects.filter(user=user_profile).count()
@@ -465,3 +477,62 @@ class AddOfflineRelative(APIView):
             status=status.HTTP_400_BAD_REQUEST,
         )
 add_offline_relative = AddOfflineRelative.as_view()
+
+
+# This below is where the function to include an connet established family with user profile
+class IncludeFamilyRequest(APIView):
+    # This is just to show the user information about the family before the user finally adds the family, because there is no edit or delete
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if not profile_check(request):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
+        family_id = request.data.get("family_id")
+        try:
+            family = Family.objects.get(uuid=family_id)
+            serializer = FamilySerializer(family)
+            return Response(
+                {"message": "Are you sure you want to add this family to your profile ?", "data": serializer.data},
+                status=status.HTTP_200_OK,
+            )
+        except Family.DoesNotExist:
+            return Response(
+                {"error": "Family does not exist."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except ValidationError:
+            return Response(
+                {"error": "Invalid ID supplied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+include_family_request = IncludeFamilyRequest.as_view()
+
+    
+class ConfirmFamilyRequest(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if not (user_profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
+        family_id = request.data.get("family_id")
+        print(family_id)
+        try:
+            family = Family.objects.get(uuid=family_id)
+            print(family)
+            user_profile.family = family
+            user_profile.save()
+            return Response(
+                {"message": "Family included successfully."},
+                status=status.HTTP_200_OK,
+            )
+        except Family.DoesNotExist:
+            return Response(
+                {"error": "Family does not exist."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        except ValidationError:
+            return Response(
+                {"error": "Invalid ID supplied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+confirm_family_request = ConfirmFamilyRequest.as_view()

@@ -17,7 +17,8 @@ class CreateFamilyView(APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
-        profile = profile_check(request)  # Only authenticated profile
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)  # Only authenticated profile
         serializer = FamilySerializer(data=request.data)
 
         handler_check = Family.objects.filter(family_handlers__operator__user=request.user)
@@ -72,7 +73,8 @@ class UpdateFamilyView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, family_id):
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         # family = Family.objects.filter(
         #     Q(author__user=request.user) | Q(family_handlers__operator__user=request.user)).distinct()[0]
@@ -100,7 +102,8 @@ class AddHandlerView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
         operator_id = request.data.get("operator_id")
         try:
             family = Family.objects.get(author=profile)
@@ -127,7 +130,8 @@ class DeleteHandlerView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, handler_id):
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
         try:
             family = Family.objects.get(author=profile)
         except Family.DoesNotExist:
@@ -153,7 +157,8 @@ class AddOriginView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, family_id):
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             family = Family.objects.get(uuid=family_id)
@@ -180,7 +185,8 @@ class UpdateOriginView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, family_id):
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             family = Family.objects.get(uuid=family_id)
@@ -208,7 +214,8 @@ class AddHouseInfoView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, family_id):
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             family = Family.objects.get(uuid=family_id)
@@ -235,7 +242,8 @@ class UpdateHouseInfoView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, family_id):
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             family = Family.objects.get(uuid=family_id)
@@ -264,7 +272,8 @@ class AddBeliefSystemView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, family_id):
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             family = Family.objects.get(uuid=family_id)
@@ -291,7 +300,8 @@ class UpdateBeliefSystemView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, family_id):
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             family = Family.objects.get(uuid=family_id)
@@ -320,7 +330,8 @@ class AddOtherInformationView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, family_id):
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             family = Family.objects.get(uuid=family_id)
@@ -347,7 +358,8 @@ class UpdateOtherInformationView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, family_id):
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             family = Family.objects.get(uuid=family_id)
@@ -376,7 +388,8 @@ class AddEulogyView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, family_id):
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             family = Family.objects.get(uuid=family_id)
@@ -403,7 +416,8 @@ class UpdateEulogyView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, family_id):
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             family = Family.objects.get(uuid=family_id)
@@ -432,7 +446,8 @@ class AddFamilyHeadView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, family_id):
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             family = Family.objects.get(uuid=family_id)
@@ -459,7 +474,8 @@ class UpdateFamilyHeadView(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, family_id, family_head_id): #This family_head_id is the uuid of the FamilyHead model and not the Profile Model
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             family = Family.objects.get(uuid=family_id)
@@ -488,7 +504,8 @@ class DeleteFamilyHeadView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, family_id, family_head_id): #This family_head_id is the uuid of the FamilyHead model and not the Profile Model
-        profile = profile_check(request)
+        if not (profile := profile_check(request)):
+            return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             family = Family.objects.get(uuid=family_id)

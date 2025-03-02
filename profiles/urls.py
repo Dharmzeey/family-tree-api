@@ -20,4 +20,7 @@ urlpatterns = [
     path("relatives/<str:relative_id>/delete/", views.delete_relative, name="delete_relative"), # Delete relative (async)
 
     path("offline-relatives/", views.add_offline_relative, name="add_offline_relative"),
+
+    path("include-family-request/", views.include_family_request, name="include_family_request"),
+    path("confirm-family-request/", views.confirm_family_request, name="confirm_family_request")
 ]

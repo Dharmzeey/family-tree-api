@@ -110,7 +110,7 @@ class UserLoginView(APIView):
 
         if family:
             is_author = family.author and family.author.user == user
-            is_handler = family.family_handlers.filter(operator__user=user).exists() # Reverse lookup
+            is_handler = family.family_handlers.filter(operator__user=user).exists() # Reverse lookupp
         else:
             is_author = is_handler = False
 

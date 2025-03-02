@@ -9,7 +9,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        exclude = ("uuid", "user")
+        exclude = ("uuid", "user", "family")
         read_only_fields = ["user"]
 
     def get_id(self, obj):
@@ -17,7 +17,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def get_family_id(self, obj):
         family = Family.objects.filter(
-            Q(author=obj) | Q(family_handlers__operator=obj)
+            Q(author=obj) | Q(family_handlers__operator=obj) | Q(family_profile=obj)
         ).distinct().first()
 
         return family.uuid if family else None
