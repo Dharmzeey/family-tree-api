@@ -515,7 +515,10 @@ class ConfirmFamilyRequest(APIView):
         if not (user_profile := profile_check(request)):
             return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
         family_id = request.data.get("family_id")
-        print(family_id)
+
+        if user_profile.family:
+            return Response({"error": "You already have a linked family"}, status=status.HTTP_400_BAD_REQUEST)
+        
         try:
             family = Family.objects.get(uuid=family_id)
             print(family)

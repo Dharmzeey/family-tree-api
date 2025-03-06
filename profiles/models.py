@@ -21,12 +21,13 @@ class Profile(models.Model):
 	picture = models.ImageField(upload_to="images", default="avatar.png", validators=[validate_image_size])
 
 	# Family
-	family = models.OneToOneField('families.Family', on_delete=models.SET_NULL, related_name="family_profile", null=True, blank=True)
+	family = models.ForeignKey('families.Family', on_delete=models.SET_NULL, related_name="family_profile", null=True, blank=True)
 	
 	def __str__(self):
 		return f"{self.last_name} {self.first_name} {self.other_name}"
 	
 	class Meta:
+		unique_together = ("user", "family")
 		ordering = ['last_name']
 	
 

@@ -7,7 +7,3 @@ def profile_check(request):
         return profile
     except AttributeError:
         return None
-        # return Response(
-        #     {"error": "Profile does not exist. Please create a profile first."},
-        #     status=status.HTTP_404_NOT_FOUND,
-        # )
