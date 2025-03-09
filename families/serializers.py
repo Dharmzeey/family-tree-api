@@ -6,7 +6,7 @@ from .models import Family, FamilyHead, Handler, Origin, HouseInfo, BeliefSystem
 class FamilyHeadSerializer(serializers.ModelSerializer):
 
     id = serializers.SerializerMethodField()
-    person_id = serializers.UUIDField(write_only=True, required=False) # This is used for creation
+    familyHead_id = serializers.UUIDField(write_only=True, required=False) # This is used for creation
     person = serializers.SerializerMethodField() # is used to render viewing the person
     still_on_throne = serializers.SerializerMethodField(read_only=True)
 
@@ -24,7 +24,7 @@ class FamilyHeadSerializer(serializers.ModelSerializer):
         return obj.still_on_throne 
     
     def create(self, validated_data):
-        person_uuid = validated_data.pop("person_id")  # Extract person UUID
+        person_uuid = validated_data.pop("familyHead_id")  # Extract person UUID
         try:
             person = Profile.objects.get(uuid=person_uuid)  # Get Profile instance
         except Profile.DoesNotExist:
