@@ -521,7 +521,6 @@ class ConfirmFamilyRequest(APIView):
         
         try:
             family = Family.objects.get(uuid=family_id)
-            print(family)
             user_profile.family = family
             user_profile.save()
             return Response(

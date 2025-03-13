@@ -18,7 +18,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 # from authentication.backends import EmailOrPhoneBackend
 
 # from utilities.error_handler import render_errors
-from families.models import Family, Handler
+from families.models import Family
 
 from . import serializers as CustomSerializers
 
@@ -27,6 +27,7 @@ User = get_user_model()
 
 email_verification_cache = caches['email_verification']
 password_reset_cache = caches['password_reset']
+password_tries_count_cache = caches['password_tries']
 
 def generate_reset_token():
   return ''.join(random.choices(string.ascii_letters + string.digits, k=64))
@@ -188,12 +189,21 @@ class RequestPasswordResetView(APIView):
         if serializer.is_valid():
             try:
                 user = User.objects.get(
-                    email=serializer.validated_data['email'],
+                    email__iexact=serializer.validated_data['email'],
                     # phone_number=serializer.validated_data['phone_number']
                 )
+
+                # check for password tries count
+                password_tries = password_tries_count_cache.get(f"password_tries:{user.email.lower()}")
+                print(password_tries)
+                if password_tries and password_tries >= 5:
+                    return Response(
+                        {"error": "You have exceeded the maximum number of tries. Please try again in 24 hours."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
                 
                 # Check if PIN already exists in cache
-                existing_data = password_reset_cache.get(f"password_reset:{user.email}")
+                existing_data = password_reset_cache.get(f"password_reset:{user.email.lower()}")
                 if existing_data:
                     return Response(
                         {"error": "password reset PIN already sent"}, 
@@ -205,17 +215,17 @@ class RequestPasswordResetView(APIView):
                 reset_token = generate_reset_token()
                 
                 # Send email
-                # send_mail(
-                #     'Kwiseworld password reset',
-                #     f'Hello 👋\nYour password reset PIN is {email_pin}. \nIt will expire in 10 minutes',
-                #     settings.DEFAULT_FROM_EMAIL,
-                #     [user.email],
-                #     fail_silently=False,
-                # )
+                send_mail(
+                    'Family Tree password reset',
+                    f'Hello 👋\nYour password reset PIN is {email_pin}. \nIt will expire in 10 minutes',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=False,
+                )
 
                 # Store in cache with 10 minutes expiration
                 password_reset_cache.set(
-                    f"password_reset:{user.email}", 
+                    f"password_reset:{user.email.lower()}", 
                     {
                         'email_pin': email_pin,
                         'reset_token': reset_token,
@@ -224,6 +234,12 @@ class RequestPasswordResetView(APIView):
                         'verified': False  # Track if PIN has been verified
                     },
                     timeout=600  # 10 minutes
+                )
+
+                password_tries_count_cache.set(
+                   f"password_tries:{user.email.lower()}",
+                   0, # max is 5 times
+                   60*60*24 # 24 hours
                 )
 
                 return Response({
@@ -249,19 +265,34 @@ class VerifyPasswordResetPinView(APIView):
         serializer = CustomSerializers.VerifyPasswordResetPinSerializer(data=request.data)
         
         if serializer.is_valid():
-            email = serializer.validated_data['email']
+            email = serializer.validated_data['email'].lower()
             # phone_number = serializer.validated_data['phone_number']
             submitted_pin = serializer.validated_data['email_pin']
             reset_token = serializer.validated_data.get('reset_token') 
 
+            # check for password tries count
+            password_tries = password_tries_count_cache.get(f"password_tries:{email.lower()}")
+
+            if password_tries and password_tries >= 5:
+                return Response(
+                    {"error": "You have exceeded the maximum number of tries. Please try again in 24 hours."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
             # Get stored data from cache
-            cached_data = password_reset_cache.get(f"password_reset:{email}")
+            cached_data = password_reset_cache.get(f"password_reset:{email.lower()}")
             
             if not cached_data:
                 return Response(
                     {"error": "password reset PIN expired or has not been sent"}, 
                     status=status.HTTP_404_NOT_FOUND
                 )
+
+            password_tries_count_cache.set(  
+               f"password_tries:{email.lower()}",
+                password_tries + 1,
+            )
+
 
             # Verify token
             if cached_data['reset_token'] != reset_token:
@@ -280,7 +311,7 @@ class VerifyPasswordResetPinView(APIView):
             # Check expiration
             timestamp = cached_data['timestamp']
             if (datetime.now(pytz.UTC).timestamp() - timestamp) > 600:  # 10 minutes
-                password_reset_cache.delete(f"password_reset:{email}")
+                password_reset_cache.delete(f"password_reset:{email.lower()}")
                 return Response(
                     {"error": "Password reset PIN expired"}, 
                     status=status.HTTP_401_UNAUTHORIZED
@@ -300,12 +331,12 @@ class VerifyPasswordResetPinView(APIView):
             cached_data['reset_token'] = reset_token
             cached_data['verified'] = True
             password_reset_cache.set(
-                f"password_verify:{email}",
+                f"password_verify:{email.lower()}",
                 cached_data,
                 timeout=600  # Reset timeout for another 10 minutes
             )
             # clears the data from password_reset
-            password_reset_cache.delete(f"password_reset:{email}")
+            password_reset_cache.delete(f"password_reset:{email.lower()}")
 
             return Response({
                 "message": "Password reset PIN verified successfully",
@@ -333,7 +364,7 @@ class CreateNewPasswordView(APIView):
             try:
                 # user = User.objects.get(email=email, phone_number=phone_number)
                 user = User.objects.get(email=email)
-                cached_data = password_reset_cache.get(f"password_verify:{email}")
+                cached_data = password_reset_cache.get(f"password_verify:{email.lower()}")
                 
                 if not cached_data:
                     return Response(
@@ -350,7 +381,7 @@ class CreateNewPasswordView(APIView):
                     )
                 user.set_password(new_password)
                 user.save()
-                password_reset_cache.delete(f"password_verify:{email}")            
+                password_reset_cache.delete(f"password_verify:{email.lower()}")            
                 return Response(
                     {"message": "password changed successfully"}, 
                     status=status.HTTP_200_OK
