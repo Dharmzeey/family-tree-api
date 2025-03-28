@@ -60,6 +60,7 @@ class UserCreateView(APIView):
     if serializer.is_valid():
       try:
         user = serializer.save()
+        request.data['email'] = request.data['email'].lower()
         tokens = TokenObtainPairSerializer().validate(request.data)
         access_token = tokens['access']
         refresh_token = tokens['refresh']
@@ -71,7 +72,7 @@ class UserCreateView(APIView):
           'data': user_serializer.data
         }
         # login(request, user)
-        # handle_send_email(user) # This sends code to user after registering
+        handle_send_email(user) # This sends code to user after registering
         return Response(data, status=status.HTTP_201_CREATED)
       except IntegrityError:
         return Response({'error': 'User with this email or Phone Number already exists.'}, status=status.HTTP_409_CONFLICT)
@@ -88,7 +89,7 @@ class UserLoginView(APIView):
         if not serializer.is_valid():
             return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-        email = serializer.validated_data.get("email")
+        email = serializer.validated_data.get("email").lower()
         phone_number = serializer.validated_data.get("phone_number")
         password = serializer.validated_data.get("password")
 
@@ -151,6 +152,8 @@ class VerifyEmailView(APIView):
     serializer_class = CustomSerializers.EmailVeriificationSerializer
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
+        if request.user.email_verified:
+            return Response({"error": "Email has already been verified"}, status=status.HTTP_201_CREATED)
         if serializer.is_valid():
             user=request.user
             cached_data = email_verification_cache.get(f"email_verification:{user.email}")
@@ -195,7 +198,6 @@ class RequestPasswordResetView(APIView):
 
                 # check for password tries count
                 password_tries = password_tries_count_cache.get(f"password_tries:{user.email.lower()}")
-                print(password_tries)
                 if password_tries and password_tries >= 5:
                     return Response(
                         {"error": "You have exceeded the maximum number of tries. Please try again in 24 hours."},
@@ -244,7 +246,7 @@ class RequestPasswordResetView(APIView):
 
                 return Response({
                     "message": "Password reset PIN sent to email",
-                    "reset_token": reset_token  # Return token to client
+                    "token": reset_token  # Return token to client
                 }, status=status.HTTP_200_OK)
                 
             except User.DoesNotExist:
@@ -340,7 +342,7 @@ class VerifyPasswordResetPinView(APIView):
 
             return Response({
                 "message": "Password reset PIN verified successfully",
-                "reset_token": reset_token
+                "token": reset_token
             }, status=status.HTTP_200_OK)
             
         return Response(
