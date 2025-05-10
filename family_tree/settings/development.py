@@ -3,12 +3,16 @@ from dotenv import load_dotenv
 load_dotenv()
 DEBUG = os.getenv('DEBUG')
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS').split(',')
+print(type(ALLOWED_HOSTS))
+print(ALLOWED_HOSTS)
 
-CORS_ALLOWED_ORIGINS = [
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",   
-]
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS').split(',')
+
+# CORS_ALLOWED_ORIGINS = [
+#   "http://localhost:3000",
+#   "http://127.0.0.1:3000",   
+# ]
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 

@@ -131,19 +131,19 @@ user_login = UserLoginView.as_view()
 
 
 class SendEmailVerificationView(APIView):
-  permission_classes = [IsAuthenticated]    
-  def post(self, request):
-    user = request.user
-    if user.email_verified:
-      return Response({"error": "Email has already been verified"}, status=status.HTTP_201_CREATED)        
-    existing_data = email_verification_cache.get(f"email_verification:{user.email}")
-    if existing_data:
-        return Response(
-            {"error": "Email Verification already sent"}, 
-                status=status.HTTP_409_CONFLICT
-            )
-    handle_send_email(user)
-    return Response({"message": "Verification PIN expired. New PIN sent to email."}, status=status.HTTP_200_OK) 
+    permission_classes = [IsAuthenticated]    
+    def post(self, request):
+        user = request.user
+        if user.email_verified:
+            return Response({"error": "Email has already been verified"}, status=status.HTTP_201_CREATED)        
+        existing_data = email_verification_cache.get(f"email_verification:{user.email}")
+        if existing_data:
+            return Response(
+                {"error": "Email Verification already sent"}, 
+                    status=status.HTTP_409_CONFLICT
+                )
+        handle_send_email(user)
+        return Response({"message": "Verification PIN expired. New PIN sent to email."}, status=status.HTTP_200_OK) 
 send_email_verificiation = SendEmailVerificationView.as_view()
 
 
