@@ -20,7 +20,7 @@ class CreateProfileView(APIView):
     parser_classes = [MultiPartParser, FormParser]
     serializer_class = ProfileSerializer
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.serializer_class(data=request.data, context={'request': request})
         if serializer.is_valid():
             try:
                 serializer.save(user=request.user)

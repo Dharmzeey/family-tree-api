@@ -1,6 +1,10 @@
 media/
 migrations/
 __pycache__/
+
 .env
+.env.local
+.env.prod
 
 db.sqlite3
+development.py

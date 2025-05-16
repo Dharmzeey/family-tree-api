@@ -4,15 +4,10 @@ load_dotenv()
 DEBUG = os.getenv('DEBUG')
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS').split(',')
-print(type(ALLOWED_HOSTS))
-print(ALLOWED_HOSTS)
 
 CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS').split(',')
 
-# CORS_ALLOWED_ORIGINS = [
-#   "http://localhost:3000",
-#   "http://127.0.0.1:3000",   
-# ]
+
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
@@ -23,6 +18,7 @@ DATABASES = {
     'USER': os.getenv('DB_USER'),
     'PASSWORD': os.getenv('DB_PASSWORD'),
     'HOST': os.getenv('DB_HOST'),
+    # 'HOST': 'localhost',
     'PORT': '',
   }
 }
@@ -49,8 +45,12 @@ CACHES = {
 
 STATIC_URL = 'static/'
 
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = '/app/staticfiles'
+
 MEDIA_URL = 'media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
+MEDIA_ROOT = '/app/mediafiles'
 
 # settings.py
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

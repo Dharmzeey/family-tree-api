@@ -2,6 +2,7 @@ import uuid
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+from django_resized import ResizedImageField
 
 User = get_user_model() 
 
@@ -18,7 +19,7 @@ class Profile(models.Model):
 	last_name = models.CharField(max_length=150, null=False)
 	first_name = models.CharField(max_length=150, null=False)	
 	other_name = models.CharField(max_length=100, blank=True, null=True)
-	picture = models.ImageField(upload_to="images", default="avatar.png", validators=[validate_image_size])
+	picture = ResizedImageField(size=[2560, None], upload_to="pictures/profiles", default="avatar.png")
 
 	# Family
 	family = models.ForeignKey('families.Family', on_delete=models.SET_NULL, related_name="family_profile", null=True, blank=True)
@@ -27,7 +28,7 @@ class Profile(models.Model):
 		return f"{self.last_name} {self.first_name} {self.other_name}"
 	
 	class Meta:
-		unique_together = ("user", "family")
+		# unique_together = ("user", "family")
 		ordering = ['last_name']
 	
 
@@ -68,7 +69,7 @@ class OfflineRelative(models.Model):
 	first_name = models.CharField(max_length=150, null=False)
 	last_name = models.CharField(max_length=150, null=False)
 	other_name = models.CharField(max_length=100, blank=True, null=True)
-	picture = models.ImageField(upload_to="images", default="avatar.png", validators=[validate_image_size], blank=True)
+	picture = ResizedImageField(size=[2560, None], upload_to="pictures/offline-relatives", default="avatar.png", blank=True)
 	relation = models.ForeignKey(FamilyRelation, on_delete=models.SET_NULL, related_name="relation_offline_relative", null=True) # How is the person related to the user
 	
 	class Meta:

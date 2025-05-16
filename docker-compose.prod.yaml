@@ -6,7 +6,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     env_file:
-      - .env.local
+      - .env.prod
 
 
   django:
@@ -21,7 +21,7 @@ services:
     expose:
       - "8000"
     env_file:
-      - .env.local
+      - .env.prod
 
 
   nginx:

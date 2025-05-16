@@ -15,8 +15,8 @@ __pycache__/
 db.sqlite3
 media/
 staticfiles/
-migrations/
-**/migrations/
+# migrations/
+# **/migrations/
 
 # mine
 rel.json
@@ -34,6 +34,8 @@ rel.json
 *.swp
 .dockerignore
 docker-compose.override.yml
+docker-compose.yaml
+Dockerfile
 
 # IDEs and editors
 .vscode/
