@@ -1,5 +1,4 @@
 media/
-migrations/
 __pycache__/
 
 .env
@@ -8,3 +7,6 @@ __pycache__/
 
 db.sqlite3
 development.py
+
+docker-compose.prod.yaml
+docker-compose.yaml
