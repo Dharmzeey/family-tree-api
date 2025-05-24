@@ -89,7 +89,7 @@ class UserLoginView(APIView):
         if not serializer.is_valid():
             return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-        email = serializer.validated_data.get("email").lower()
+        email = serializer.validated_data.get("email")
         phone_number = serializer.validated_data.get("phone_number")
         password = serializer.validated_data.get("password")
 

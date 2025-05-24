@@ -10,3 +10,4 @@ development.py
 
 docker-compose.prod.yaml
 docker-compose.yaml
+rel.json
