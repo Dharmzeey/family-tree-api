@@ -44,11 +44,11 @@ CACHES = {
 STATIC_URL = 'static/'
 
 # STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATIC_ROOT = '/app/staticfiles'
+STATIC_ROOT = '/var/www/html/staticfiles'
 
 MEDIA_URL = 'media/'
 # MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
-MEDIA_ROOT = '/app/mediafiles'
+MEDIA_ROOT = '/var/www/html/mediafiles'
 
 # STATIC_ROOT = BASE_DIR / 'staticfiles'
 

@@ -25,10 +25,10 @@ RUN useradd -m -r appuser && \
    chown -R appuser /app
 
 # create static and media files and set only user and not group to appuser
-RUN mkdir -p /app/staticfiles && \
-   mkdir /app/mediafiles && \
-   chown -R appuser /app/staticfiles && \
-   chown -R appuser /app/mediafiles
+RUN mkdir -p /var/www/html/staticfiles && \
+   mkdir /var/www/html/mediafiles && \
+   chown -R appuser /var/www/html/staticfiles && \
+   chown -R appuser /var/www/html/mediafiles
  
  
 # Copy the Python dependencies from the builder stage
