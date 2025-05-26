@@ -20,6 +20,7 @@ class Profile(models.Model):
 	first_name = models.CharField(max_length=150, null=False)	
 	other_name = models.CharField(max_length=100, blank=True, null=True)
 	picture = ResizedImageField(size=[2560, None], upload_to="pictures/profiles", default="avatar.png")
+	about = models.TextField()
 
 	# Family
 	family = models.ForeignKey('families.Family', on_delete=models.SET_NULL, related_name="family_profile", null=True, blank=True)
