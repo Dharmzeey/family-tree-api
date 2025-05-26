@@ -14,9 +14,11 @@ from utilities.pagiation import CustomPagination
 from families.models import Family
 from families.serializers import FamilySerializer
 
+from utilities.permissions import IsVerified
+
 
 class CreateProfileView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
     parser_classes = [MultiPartParser, FormParser]
     serializer_class = ProfileSerializer
     def post(self, request):
@@ -34,7 +36,7 @@ create_profile = CreateProfileView.as_view()
 
 
 class ViewProfileView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
     def get(self, request):
         try:
             profile = request.user.user_profile
@@ -51,7 +53,7 @@ view_profile = ViewProfileView.as_view()
 
 
 class EditProfileView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
     serializer_class = ProfileSerializer
 
     def put(self, request):
@@ -76,7 +78,7 @@ class GetRelations(ListAPIView):
     Fetches all the relations in the DB (e.g., Father, Mother, Sister, Brother, etc.)
     and returns them wrapped in a "data" key.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
     serializer_class = RelationSerializer
     queryset = FamilyRelation.objects.all()
 
@@ -94,7 +96,7 @@ get_relations = GetRelations.as_view()
 
 
 class SearchRelatives(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
     pagination_class = CustomPagination
 
     def get(self, request):
@@ -130,7 +132,7 @@ search_relatives = SearchRelatives.as_view()
 
 class CreateRelationsView(APIView):
     # This will evaluate and then send notification to the other account
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
     # serializer_class = RelativeSerializer
     def post(self, request):
         # Get the current user's profile
@@ -235,7 +237,7 @@ create_relation = CreateRelationsView.as_view()
 
 
 class ViewBondRequests(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def get(self, request):
         if not (user_profile := profile_check(request)):
@@ -262,7 +264,7 @@ view_bond_requests = ViewBondRequests.as_view()
 class ProcessBondRequest(APIView):
     # User can either accept or reject a bond request
     # If accepted, the relationship will be created
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
     def post(self, request):
         if not (user_profile := profile_check(request)):
             return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
@@ -310,7 +312,7 @@ process_bond_request = ProcessBondRequest.as_view()
 
 
 class ViewRelatives(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def get(self, request):
         if not (user_profile := profile_check(request)):
@@ -346,7 +348,7 @@ view_relatives = ViewRelatives.as_view()
 
 class ViewUserRelatives(APIView):
     # This  view is similar to the one that fetch the logged in user relative, but rather the relatives of other user with uuid
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def get(self, request, relative_id):
         try:
@@ -393,7 +395,7 @@ view_user_relatives = ViewUserRelatives.as_view()
 
 
 class DeleteRelativeView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
     def delete(self, request, relative_id):
         if not (user_profile := profile_check(request)):
             return Response({"error": "Profile does not exist. Please create a profile first."}, status=status.HTTP_404_NOT_FOUND)
@@ -427,7 +429,7 @@ delete_relative = DeleteRelativeView.as_view()
     
 
 class AddOfflineRelative(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
     parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request):
@@ -482,7 +484,7 @@ add_offline_relative = AddOfflineRelative.as_view()
 # This below is where the function to include an connet established family with user profile
 class IncludeFamilyRequest(APIView):
     # This is just to show the user information about the family before the user finally adds the family, because there is no edit or delete
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def post(self, request):
         if not profile_check(request):
@@ -509,7 +511,7 @@ include_family_request = IncludeFamilyRequest.as_view()
 
     
 class ConfirmFamilyRequest(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def post(self, request):
         if not (user_profile := profile_check(request)):

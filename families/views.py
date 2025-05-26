@@ -11,10 +11,12 @@ from profiles.models import Profile
 from .models import Family, FamilyHead, Handler, Origin, HouseInfo, BeliefSystem, Eulogy, OtherInformation
 from .serializers import FamilySerializer, HandlerSerializer, OriginSerializer, HouseInfoSerializer, BeliefSystemSerializer, OtherInformationSerializer, EulogySerializer, FamilyHeadSerializer
 
+from utilities.permissions import IsVerified
+
 # I am thinking that create Family should be done from dev's end, I mean they will fill a kind of request, then the superuser can do the creation
 # Family
 class CreateFamilyView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
     
     def post(self, request):
         if not (profile := profile_check(request)):
@@ -39,7 +41,7 @@ create_family = CreateFamilyView.as_view()
 
 
 class ViewFamilyView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def get(self, request, family_id):
         profile_check(request)
@@ -70,7 +72,7 @@ view_family = ViewFamilyView.as_view()
 
 
 class UpdateFamilyView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def put(self, request, family_id):
         if not (profile := profile_check(request)):
@@ -99,7 +101,7 @@ update_family = UpdateFamilyView.as_view()
 
 
 class AddHandlerView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def post(self, request):
         if not (profile := profile_check(request)):
@@ -127,7 +129,7 @@ add_handler = AddHandlerView.as_view()
 
 
 class DeleteHandlerView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def delete(self, request, handler_id):
         if not (profile := profile_check(request)):
@@ -154,7 +156,7 @@ delete_handler = DeleteHandlerView.as_view()
 
 
 class AddOriginView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def post(self, request, family_id):
         if not (profile := profile_check(request)):
@@ -182,7 +184,7 @@ add_origin = AddOriginView.as_view()
 
 
 class UpdateOriginView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def put(self, request, family_id):
         if not (profile := profile_check(request)):
@@ -211,7 +213,7 @@ class UpdateOriginView(APIView):
 update_origin = UpdateOriginView.as_view()
 
 class AddHouseInfoView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def post(self, request, family_id):
         if not (profile := profile_check(request)):
@@ -239,7 +241,7 @@ add_house_info = AddHouseInfoView.as_view()
 
 
 class UpdateHouseInfoView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def put(self, request, family_id):
         if not (profile := profile_check(request)):
@@ -269,7 +271,7 @@ update_house_info = UpdateHouseInfoView.as_view()
 
 
 class AddBeliefSystemView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def post(self, request, family_id):
         if not (profile := profile_check(request)):
@@ -297,7 +299,7 @@ add_belief_system = AddBeliefSystemView.as_view()
 
 
 class UpdateBeliefSystemView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def put(self, request, family_id):
         if not (profile := profile_check(request)):
@@ -327,7 +329,7 @@ update_belief_system = UpdateBeliefSystemView.as_view()
 
 
 class AddOtherInformationView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def post(self, request, family_id):
         if not (profile := profile_check(request)):
@@ -355,7 +357,7 @@ add_other_information = AddOtherInformationView.as_view()
 
 
 class UpdateOtherInformationView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def put(self, request, family_id):
         if not (profile := profile_check(request)):
@@ -385,7 +387,7 @@ update_other_information = UpdateOtherInformationView.as_view()
 
 
 class AddEulogyView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def post(self, request, family_id):
         if not (profile := profile_check(request)):
@@ -413,7 +415,7 @@ add_eulogy = AddEulogyView.as_view()
 
 
 class UpdateEulogyView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def put(self, request, family_id):
         if not (profile := profile_check(request)):
@@ -443,7 +445,7 @@ update_eulogy = UpdateEulogyView.as_view()
 
 
 class AddFamilyHeadView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def post(self, request, family_id):
         if not (profile := profile_check(request)):
@@ -471,7 +473,7 @@ add_family_head = AddFamilyHeadView.as_view()
 
 
 class UpdateFamilyHeadView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def put(self, request, family_id, family_head_id): #This family_head_id is the uuid of the FamilyHead model and not the Profile Model
         if not (profile := profile_check(request)):
@@ -501,7 +503,7 @@ update_family_head = UpdateFamilyHeadView.as_view()
 
 
 class DeleteFamilyHeadView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsVerified]
 
     def delete(self, request, family_id, family_head_id): #This family_head_id is the uuid of the FamilyHead model and not the Profile Model
         if not (profile := profile_check(request)):

@@ -10,6 +10,8 @@ CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS').split(',')
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS').split(',')
+
 DATABASES = {
   'default': {
     'ENGINE': 'django.db.backends.postgresql',
