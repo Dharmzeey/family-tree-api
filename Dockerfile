@@ -15,7 +15,7 @@ ENV PYTHONUNBUFFERED=1
 # Install dependencies first for caching benefit
 RUN pip install --upgrade pip 
 COPY requirements.txt /app/ 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --force-reinstall -r requirements.txt
  
 # Stage 2: Production stage
 FROM python:3.13-slim
